@@ -1,7 +1,7 @@
 import socket
 import sys
 
-class UDP_CLIENT:
+class UDP_Client:
 
     def __init__(self, ip, port):
         self.PORT = port
@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     print "Sending " + data
 
-    server = UDP_CLIENT("127.0.0.1", 5005)
+    server = UDP_Client("127.0.0.1", 5005)
     server.send(data)
 
     print "DONE"

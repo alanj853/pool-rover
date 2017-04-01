@@ -1,6 +1,11 @@
 import urllib
 import numpy as np
 import cv2
+import sys
+
+sys.path.append("..\UDP")
+
+from client import UDP_Client
 
 def click_and_crop(event, x, y, flags, param):
     # grab references to the global variables
@@ -33,7 +38,8 @@ class Camera:
     
     refPt = []
 
-    def __init__(self, camera):
+    def __init__(self, camera, ip):
+        self.client = UDP_Client(ip, 5005)
         self.cap = cv2.VideoCapture(camera)
         #self.refPt = []
         self.run_camera = True
@@ -60,8 +66,9 @@ class Camera:
         arr.append(self.c_x2)
         arr.append(self.c_y2)
 
+        data = "C:" + str(self.c_x1) + ":"+ str(self.c_y1) + ":"+ str(self.c_x2) + ":"+ str(self.c_y2) + ":E"
         print "Car: (", self.c_x1, " ", self.c_y1, ") (", self.c_x2, " ", self.c_y2, ") "
-        return arr
+        return data
 
     def get_target_coord(self):
         arr = []
@@ -70,8 +77,9 @@ class Camera:
         arr.append(self.t_x2)
         arr.append(self.t_y2)
 
+        data = "T:" + str(self.t_x1) + ":"+ str(self.t_y1) + ":"+ str(self.t_x2) + ":"+ str(self.t_y2) + ":E"
         print "Target: (", self.t_x1, " ", self.t_y1, ") (", self.t_x2, " ", self.t_y2, ") "
-        return arr
+        return data
 
     def get_frame_coord(self):
         arr = []
@@ -80,28 +88,51 @@ class Camera:
         arr.append(self.f_x2)
         arr.append(self.f_y2)
 
+        data = "F:" + str(self.f_x1) + ":"+ str(self.f_y1) + ":"+ str(self.f_x2) + ":"+ str(self.f_y2) + ":E"
         print "Frame: (", self.f_x1, " ", self.f_y1, ") (", self.f_x2, " ", self.f_y2, ") "
-        return arr
+        return data
+
+    def draw_rectangles(self):
+        cv2.rectangle(self.frame, (self.c_x1, self.c_y1), (self.c_x2, self.c_y2), (255, 255, 0), 2)
+        cv2.rectangle(self.frame, (self.t_x1, self.t_y1), (self.t_x2, self.t_y2), (0, 255, 255), 2)
+        cv2.rectangle(self.frame, (self.f_x1, self.f_y1), (self.f_x2, self.f_y2), (255, 255, 255), 2)
+        cv2.imshow("frame", self.frame)
+        
 
     def run(self):
         count = 0
         a = (0,0)
         b = (0,0)
 
+        car_assigned = False
+        target_assigned = False
+        frame_assigned = False
+
         while(self.run_camera):
             
             # Capture frame-by-frame
-            ret, frame = self.cap.read()
+            ret, self.frame = self.cap.read()
 
-            cv2.imshow('frame',frame)
+            cv2.imshow('frame',self.frame)
             if count < 1:
                 cv2.setMouseCallback('frame', click_and_crop)
             if count > 100:
                 count = 0
             count = count + 1
 
-            cv2.rectangle(frame, a, b, (0, 255, 0), 2)
-            cv2.imshow("frame", frame)
+            cv2.rectangle(self.frame, a, b, (0, 255, 0), 2)
+            
+
+            if frame_assigned:
+                cv2.rectangle(self.frame, (self.f_x1, self.f_y1), (self.f_x2, self.f_y2), (255, 255, 255), 2)
+
+            if target_assigned:
+                cv2.rectangle(self.frame, (self.t_x1, self.t_y1), (self.t_x2, self.t_y2), (0, 255, 255), 2)
+            
+            if car_assigned:
+                cv2.rectangle(self.frame, (self.c_x1, self.c_y1), (self.c_x2, self.c_y2), (255, 255, 0), 2)
+
+            cv2.imshow("frame", self.frame)
 
             try:
                 a = self.refPt[0]
@@ -112,6 +143,7 @@ class Camera:
 
             input = cv2.waitKey(1) & 0xFF 
             if input == ord('q'):
+                self.client.send("Q:E")
                 break
             elif input == ord('f'):
                 print "Frame Assigned ", a, " ", b
@@ -119,23 +151,37 @@ class Camera:
                 self.f_y1 = a[1]
                 self.f_x2 = b[0]
                 self.f_y2 = b[1]
+                frame_assigned = True
             elif input == ord('t'):
                 print "Target Assigned ", a, " ", b
                 self.t_x1 = a[0]
                 self.t_y1 = a[1]
                 self.t_x2 = b[0]
                 self.t_y2 = b[1]
+                target_assigned = True
             elif input == ord('c'):
                 print "Car Assigned ", a, " ", b
                 self.c_x1 = a[0]
                 self.c_y1 = a[1]
                 self.c_x2 = b[0]
                 self.c_y2 = b[1]
+                car_assigned = True
             elif input == ord('s'):
                 print "Sending Coordinates to Car ..."
-                self.get_car_coord()
-                self.get_frame_coord()
-                self.get_target_coord()
+                car_data = self.get_car_coord()
+                target_data = self.get_target_coord()
+                frame_data = self.get_frame_coord()
+                self.client.send(car_data)
+                self.client.send(frame_data)
+                self.client.send(target_data)
+                self.client.send("P:E")
+            elif input == ord('d'):
+                print "Drawing rectangles"
+                cv2.rectangle(self.frame, (self.c_x1, self.c_y1), (self.c_x2, self.c_y2), (255, 255, 0), 2)
+                cv2.rectangle(self.frame, (self.t_x1, self.t_y1), (self.t_x2, self.t_y2), (0, 255, 255), 2)
+                cv2.rectangle(self.frame, (self.f_x1, self.f_y1), (self.f_x2, self.f_y2), (255, 255, 255), 2)
+                cv2.imshow("frame", self.frame)
+                cv2.waitKey(1000)
             elif input == ord('r'):
                 print "All Assignments Reset "
                 self.f_x1 = 0
@@ -150,6 +196,9 @@ class Camera:
                 self.c_y1 = 0
                 self.c_x2 = 0
                 self.c_y2 = 0
+                frame_assigned = False
+                target_assigned = False
+                car_assigned = False
 
 
 
@@ -158,5 +207,19 @@ class Camera:
         cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    cam = Camera(0)
+    camera = 0
+    ip = "127.0.0.1"
+
+    
+    try:
+        ip = sys.argv[1]
+    except IndexError:
+        print "No Camera Given: using 0"
+
+    try:
+        ip = sys.argv[2]
+    except IndexError:
+        print "No IP Given: using 127.0.0.1"
+
+    cam = Camera(camera, ip)
     cam.run()
