@@ -25,6 +25,8 @@ class UDP_SERVER:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
         self.sock.bind((self.IP_ADDR, self.PORT))
 
+        print "Waiting for connection..."
+
     def run(self):
         while self.run_server:
             data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes

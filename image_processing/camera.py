@@ -38,8 +38,8 @@ class Camera:
     
     refPt = []
 
-    def __init__(self, camera):
-        self.client = UDP_Client("127.0.0.1", 5005)
+    def __init__(self, camera, ip):
+        self.client = UDP_Client(ip, 5005)
         self.cap = cv2.VideoCapture(camera)
         #self.refPt = []
         self.run_camera = True
@@ -207,5 +207,19 @@ class Camera:
         cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    cam = Camera(0)
+    camera = 0
+    ip = "127.0.0.1"
+
+    
+    try:
+        ip = sys.argv[1]
+    except IndexError:
+        print "No Camera Given: using 0"
+
+    try:
+        ip = sys.argv[2]
+    except IndexError:
+        print "No IP Given: using 127.0.0.1"
+
+    cam = Camera(camera, ip)
     cam.run()
