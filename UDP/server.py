@@ -1,4 +1,5 @@
 import socket
+import sys
 
 class UDP_SERVER:
 
@@ -24,7 +25,14 @@ class UDP_SERVER:
         print "Server Terminated"
 
 if __name__ == '__main__':
-    server = UDP_SERVER("127.0.0.1", 5005)
+    
+    ip = "127.0.0.1"
+    try:
+        ip = sys.argv[1]
+    except IndexError:
+        print "No IP entered. Using 127.0.0.1"
+
+    server = UDP_SERVER(ip, 5005)
     server.run()
 
     print "DONE"
