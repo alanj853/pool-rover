@@ -83,25 +83,47 @@ class Camera:
         print "Frame: (", self.f_x1, " ", self.f_y1, ") (", self.f_x2, " ", self.f_y2, ") "
         return arr
 
+    def draw_rectangles(self):
+        cv2.rectangle(self.frame, (self.c_x1, self.c_y1), (self.c_x2, self.c_y2), (255, 255, 0), 2)
+        cv2.rectangle(self.frame, (self.t_x1, self.t_y1), (self.t_x2, self.t_y2), (0, 255, 255), 2)
+        cv2.rectangle(self.frame, (self.f_x1, self.f_y1), (self.f_x2, self.f_y2), (255, 255, 255), 2)
+        cv2.imshow("frame", self.frame)
+        
+
     def run(self):
         count = 0
         a = (0,0)
         b = (0,0)
 
+        car_assigned = False
+        target_assigned = False
+        frame_assigned = False
+
         while(self.run_camera):
             
             # Capture frame-by-frame
-            ret, frame = self.cap.read()
+            ret, self.frame = self.cap.read()
 
-            cv2.imshow('frame',frame)
+            cv2.imshow('frame',self.frame)
             if count < 1:
                 cv2.setMouseCallback('frame', click_and_crop)
             if count > 100:
                 count = 0
             count = count + 1
 
-            cv2.rectangle(frame, a, b, (0, 255, 0), 2)
-            cv2.imshow("frame", frame)
+            cv2.rectangle(self.frame, a, b, (0, 255, 0), 2)
+            
+
+            if frame_assigned:
+                cv2.rectangle(self.frame, (self.f_x1, self.f_y1), (self.f_x2, self.f_y2), (255, 255, 255), 2)
+
+            if target_assigned:
+                cv2.rectangle(self.frame, (self.t_x1, self.t_y1), (self.t_x2, self.t_y2), (0, 255, 255), 2)
+            
+            if car_assigned:
+                cv2.rectangle(self.frame, (self.c_x1, self.c_y1), (self.c_x2, self.c_y2), (255, 255, 0), 2)
+
+            cv2.imshow("frame", self.frame)
 
             try:
                 a = self.refPt[0]
@@ -119,23 +141,33 @@ class Camera:
                 self.f_y1 = a[1]
                 self.f_x2 = b[0]
                 self.f_y2 = b[1]
+                frame_assigned = True
             elif input == ord('t'):
                 print "Target Assigned ", a, " ", b
                 self.t_x1 = a[0]
                 self.t_y1 = a[1]
                 self.t_x2 = b[0]
                 self.t_y2 = b[1]
+                target_assigned = True
             elif input == ord('c'):
                 print "Car Assigned ", a, " ", b
                 self.c_x1 = a[0]
                 self.c_y1 = a[1]
                 self.c_x2 = b[0]
                 self.c_y2 = b[1]
+                car_assigned = True
             elif input == ord('s'):
                 print "Sending Coordinates to Car ..."
                 self.get_car_coord()
                 self.get_frame_coord()
                 self.get_target_coord()
+            elif input == ord('d'):
+                print "Drawing rectangles"
+                cv2.rectangle(self.frame, (self.c_x1, self.c_y1), (self.c_x2, self.c_y2), (255, 255, 0), 2)
+                cv2.rectangle(self.frame, (self.t_x1, self.t_y1), (self.t_x2, self.t_y2), (0, 255, 255), 2)
+                cv2.rectangle(self.frame, (self.f_x1, self.f_y1), (self.f_x2, self.f_y2), (255, 255, 255), 2)
+                cv2.imshow("frame", self.frame)
+                cv2.waitKey(1000)
             elif input == ord('r'):
                 print "All Assignments Reset "
                 self.f_x1 = 0
@@ -150,6 +182,9 @@ class Camera:
                 self.c_y1 = 0
                 self.c_x2 = 0
                 self.c_y2 = 0
+                frame_assigned = False
+                target_assigned = False
+                car_assigned = False
 
 
 
