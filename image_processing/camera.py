@@ -1,6 +1,11 @@
 import urllib
 import numpy as np
 import cv2
+import sys
+
+sys.path.append("..\UDP")
+
+from client import UDP_Client
 
 def click_and_crop(event, x, y, flags, param):
     # grab references to the global variables
@@ -34,6 +39,7 @@ class Camera:
     refPt = []
 
     def __init__(self, camera):
+        self.client = UDP_Client("127.0.0.1", 5005)
         self.cap = cv2.VideoCapture(camera)
         #self.refPt = []
         self.run_camera = True
@@ -60,8 +66,9 @@ class Camera:
         arr.append(self.c_x2)
         arr.append(self.c_y2)
 
+        data = "C:" + str(self.c_x1) + ":"+ str(self.c_y1) + ":"+ str(self.c_x2) + ":"+ str(self.c_y2) + ":E"
         print "Car: (", self.c_x1, " ", self.c_y1, ") (", self.c_x2, " ", self.c_y2, ") "
-        return arr
+        return data
 
     def get_target_coord(self):
         arr = []
@@ -70,8 +77,9 @@ class Camera:
         arr.append(self.t_x2)
         arr.append(self.t_y2)
 
+        data = "T:" + str(self.t_x1) + ":"+ str(self.t_y1) + ":"+ str(self.t_x2) + ":"+ str(self.t_y2) + ":E"
         print "Target: (", self.t_x1, " ", self.t_y1, ") (", self.t_x2, " ", self.t_y2, ") "
-        return arr
+        return data
 
     def get_frame_coord(self):
         arr = []
@@ -80,8 +88,9 @@ class Camera:
         arr.append(self.f_x2)
         arr.append(self.f_y2)
 
+        data = "F:" + str(self.f_x1) + ":"+ str(self.f_y1) + ":"+ str(self.f_x2) + ":"+ str(self.f_y2) + ":E"
         print "Frame: (", self.f_x1, " ", self.f_y1, ") (", self.f_x2, " ", self.f_y2, ") "
-        return arr
+        return data
 
     def draw_rectangles(self):
         cv2.rectangle(self.frame, (self.c_x1, self.c_y1), (self.c_x2, self.c_y2), (255, 255, 0), 2)
@@ -134,6 +143,7 @@ class Camera:
 
             input = cv2.waitKey(1) & 0xFF 
             if input == ord('q'):
+                self.client.send("Q:E")
                 break
             elif input == ord('f'):
                 print "Frame Assigned ", a, " ", b
@@ -158,9 +168,13 @@ class Camera:
                 car_assigned = True
             elif input == ord('s'):
                 print "Sending Coordinates to Car ..."
-                self.get_car_coord()
-                self.get_frame_coord()
-                self.get_target_coord()
+                car_data = self.get_car_coord()
+                target_data = self.get_target_coord()
+                frame_data = self.get_frame_coord()
+                self.client.send(car_data)
+                self.client.send(frame_data)
+                self.client.send(target_data)
+                self.client.send("P:E")
             elif input == ord('d'):
                 print "Drawing rectangles"
                 cv2.rectangle(self.frame, (self.c_x1, self.c_y1), (self.c_x2, self.c_y2), (255, 255, 0), 2)
