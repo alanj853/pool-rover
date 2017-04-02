@@ -2,6 +2,7 @@ import fcntl
 import termios
 import time
 import RPi.GPIO as GPIO
+import math
 
 class Car:
     motor1a = 16
@@ -140,46 +141,33 @@ if __name__ == "__main__":
 				command = ""
 				car.stop_all()
 		else:
-			limit = 10
-			if (server.car_center_x => server.tar_center_x + limit or server.car_center_x <= server.tar_center_x - limit) and (server.car_center_y => server.tar_center_y + limit or server.car_center_y <= server.tar_center_y - limit):
-				print "Inside Target!!!"
-				quit = True
+			slope_limit = 5
+			distance_limit = 10
+			diff_in_slope = server.slope_car - server.slope_tar
+			distance_to_target = sqrt((server.car_center_x - server.tar_center_x)*(server.car_center_x - server.tar_center_x) + (server.car_center_y - server.tar_center_y)*(server.car_center_y - server.tar_center_y))
+
+			if diff_in_slope < 0:
+					diff_in_slope = diff_in_slope * -1 ## make sure diff is a positive number	
+			
+			if diff_in_slope > slope_limit:
+				print "Rotating"
+				curr = time.time()
+				target = curr + .1
+				while curr < target:
+					car.go_right()
+					curr = time.time()
+				command = ""
+			elif distance_to_target > distance_limit:
+				print "Moving Forward"
+				curr = time.time()
+				target = curr + .1
+				while curr < target:
+					car.go_forward()
+					curr = time.time()
+				command = ""
 			else:
-				if server.car_center_x < server.tar_center_x:
-					print "going east"
-					curr = time.time()
-					target = curr + .1
-					while curr < target:
-						car.go_forward()
-						curr = time.time()
-					command = ""
-				elif server.car_center_x > server.tar_center_x:
-					print "going west"
-					curr = time.time()
-					target = curr + .1
-					while curr < target:
-						car.go_backward()
-						curr = time.time()
-					command = ""
-				elif server.car_center_y > server.tar_center_y:
-					print "going North"
-					curr = time.time()
-					target = curr + .1
-					while curr < target:
-						car.go_backward()
-						curr = time.time()
-					command = ""
-				elif server.car_center_y < server.tar_center_y:
-					print "going South"
-					curr = time.time()
-					target = curr + .1
-					while curr < target:
-						car.go_backward()
-						curr = time.time()
-					command = ""
-				else:
-					print "Stopped"
-					car.stop_all()
+				print "Stopped"
+				car.stop_all()
 
 
 

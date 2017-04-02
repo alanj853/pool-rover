@@ -12,10 +12,10 @@ class UDP_SERVER:
         self.car_center_y = 0
         self.tar_center_x = 0
         self.tar_center_y = 0
-        self.north_point = 0
-        self.south_point = 0
         self.east_point = 0
         self.west_point = 0
+        self.slope_car = 0
+        self.slope_tar = 0
         self.f_x1 = 0
         self.f_y1 = 0
         self.f_x2 = 0
@@ -46,20 +46,11 @@ class UDP_SERVER:
                 self.c_y1 = int(arr[2])
                 self.c_x2 = int(arr[3])
                 self.c_y2 = int(arr[4])
-
-                x1 = self.c_x1
-                y1 = self.c_y1
-                x2 = self.c_x2
-                y2 = self.c_y2
-
-                if x1 <= x2:
-                    self.car_center_x = x1 + (x2 - x1)/2
-                else:
-                    self.car_center_x = x2 + (x1 - x2)/2
-                if y1 <= y2:
-                    self.car_center_y = y1 + (y2 - y1)/2
-                else:
-                    self.car_center_y = y2 + (y1 - y2)/2
+                self.west_point = [int(arr[5]),int(arr[6])]
+                self.east_point = [int(arr[7]),int(arr[8])]
+                self.car_center_x = int(arr[9])
+                self.car_center_y = int(arr[10])
+                self.slope_car = float(arr[11])
                     
             if arr[0] == "F":
                 self.f_x1 = int(arr[1])
@@ -67,66 +58,21 @@ class UDP_SERVER:
                 self.f_x2 = int(arr[3])
                 self.f_y2 = int(arr[4])
 
-                x1 = self.f_x1
-                y1 = self.f_y1
-                x2 = self.f_x2
-                y2 = self.f_y2
-
-                if x1 <= x2:
-                    if y1 <= y2:
-                        self.west_point = (x1, y1 + (y2 - y1)/2)
-                        self.east_point = (x2, y1 + (y2 - y1)/2)
-                    if y2 <= y1:
-                        self.west_point = (x2, y2 + (y1 - y2)/2)
-                        self.east_point = (x1, y2 + (y1 - y2)/2)
-                elif x1 > x2:
-                    if y1 <= y2:
-                        self.east_point = (x1, y1 + (y2 - y1)/2)
-                        self.west_point = (x2, y1 + (y2 - y1)/2)
-                    if y2 <= y1:
-                        self.east_point = (x1, (y1 - y2)/2)
-                        self.west_point = (x2, (y2 - y1)/2)
-                    
-                if y1 <= y2:
-                    if x1 <= x2:
-                        self.north_point = (y1, x1 + (x2 - x1)/2)
-                        self.south_point = (y2, x1 + (x2 - x1)/2)
-                    if x2 <= x1:
-                        self.south_point = (y2, x2 + (x1 - x2)/2)
-                        self.north_point = (y1, x2 + (x1 - x2)/2)
-                elif y1 > y2:
-                    if x1 <= x2:
-                        self.south_point = (y1, x1 + (x2 - x1)/2)
-                        self.north_point = (y2, x1 + (x2 - x1)/2)
-                    if x2 <= x1:
-                        self.north_point = (y2, x2 + (x1 - x2)/2)
-                        self.south_point = (y1, x2 + (x1 - x2)/2)
-
-
             if arr[0] == "T":
                 self.t_x1 = int(arr[1])
                 self.t_y1 = int(arr[2])
                 self.t_x2 = int(arr[3])
                 self.t_y2 = int(arr[4])
-
-                x1 = self.t_x1
-                y1 = self.t_y1
-                x2 = self.t_x2
-                y2 = self.t_y2
-
-                if x1 <= x2:
-                    self.tar_center_x = x1 + (x2 - x1)/2
-                else:
-                    self.tar_center_x = x2 + (x1 - x2)/2
-                if y1 <= y2:
-                    self.tar_center_y = y1 + (y2 - y1)/2
-                else:
-                    self.tar_center_y = y2 + (y1 - y2)/2
+                self.tar_center_x = int(arr[5])
+                self.tar_center_y = int(arr[6])
+                self.slope_tar = float(arr[7])
 
             if arr[0] == "P":
-                print "Car: (", str(self.c_x1), " ", str(self.c_y1), ") (", str(self.c_x2), " ", str(self.c_y2), ") "
-                print "Target: (", str(self.t_x1), " ", str(self.t_y1), ") (", self.t_x2), " ", str(self.t_y2), ") "
-                print "Frame: (", str(self.f_x1), " ", str(self.f_y1), ") (", self.f_x2), " ", str(self.f_y2), ") "
+                print "Car: (", str(self.c_x1), " ", str(self.c_y1), ") (", str(self.c_x2), " ", str(self.c_y2), ") . Center: (", str(self.car_center_x), ",", str(self.car_center_y), ")" 
+                print "Target: (", str(self.t_x1), " ", str(self.t_y1), ") (", str(self.t_x2), " ", str(self.t_y2), ") . Center: (", str(self.tar_center_x), ",", str(self.tar_center_y), ")" 
+                print "Frame: (", str(self.f_x1), " ", str(self.f_y1), ") (", str(self.f_x2), " ", str(self.f_y2), ") "
+                print "Slope of Car: ", str(self.slope_car)
+                print "Slope to Target", str(self.slope_tar)
                 print ""
 
             if arr[0] == "Q":
