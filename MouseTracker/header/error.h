@@ -1,0 +1,2 @@
+#define NORMAL_EXIT 0
+#define CAMERA_NOT_FOUND 5
