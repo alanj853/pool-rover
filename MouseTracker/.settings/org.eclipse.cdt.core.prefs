@@ -1,3 +1,6 @@
 eclipse.preferences.version=1
+environment/project/cdt.managedbuild.config.gnu.cross.exe.debug.254948484/LD_LIBRARY_PATH/delimiter=\:
+environment/project/cdt.managedbuild.config.gnu.cross.exe.debug.254948484/LD_LIBRARY_PATH/operation=append
+environment/project/cdt.managedbuild.config.gnu.cross.exe.debug.254948484/LD_LIBRARY_PATH/value=$LD_LIBRARY_PATH\:/home/alan/opencv_install/usr/local/lib/x86_64-linux-gnu
 environment/project/cdt.managedbuild.config.gnu.cross.exe.debug.254948484/append=true
 environment/project/cdt.managedbuild.config.gnu.cross.exe.debug.254948484/appendContributed=true

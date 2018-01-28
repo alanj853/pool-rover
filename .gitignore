@@ -1,3 +1,4 @@
 UDP/*.pyc
 MouseTracker/Debug/*
-
+MouseTracker/.metadata/*
+MouseTracker/RemoteSystemsTempFiles/*
