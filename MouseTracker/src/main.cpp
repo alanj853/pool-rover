@@ -130,7 +130,7 @@ bool determine_camera(char *camera_name) {
 //		return false;
 //	}
 
-	return camera.open(1);
+	return camera.open(0);
 }
 
 Mat complementImage(Mat im, int rows, int cols) {
