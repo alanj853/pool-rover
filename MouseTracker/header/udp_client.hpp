@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_UDP_CLIENT_SERVER_H
-#define SNAP_UDP_CLIENT_SERVER_H
+#ifndef UDP_CLIENT_SERVER_HPP_
+#define UDP_CLIENT_SERVER_HPP_
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -73,6 +73,4 @@ private:
 // };
 
 } // namespace udp_client_server
-#endif
-// SNAP_UDP_CLIENT_SERVER_H
-// vim: ts=4 sw=4 et
+#endif /* UDP_CLIENT_SERVER_HPP_ */

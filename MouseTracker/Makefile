@@ -28,7 +28,7 @@ clean:
 	
 utils:
 	mkdir -p $(OUTPUT_DIR)/src
-	$(CPP) -std=$(STD) -I$(LOCAL_INCLUDE_DIR) -I$(OPENCV_INCLUDE_DIR) $(OTHER_OPTS) -MF"$(OUTPUT_DIR)/src/utils.d" -MT"$(OUTPUT_DIR)/src/utils.d" -o "$(OUTPUT_DIR)/src/utils.o" "$(SRC_DIR)/utils.c"
+	$(CPP) -std=$(STD) -I$(LOCAL_INCLUDE_DIR) -I$(OPENCV_INCLUDE_DIR) $(OTHER_OPTS) -MF"$(OUTPUT_DIR)/src/utils.d" -MT"$(OUTPUT_DIR)/src/utils.d" -o "$(OUTPUT_DIR)/src/utils.o" "$(SRC_DIR)/utils.cpp"
 
 object:
 	mkdir -p $(OUTPUT_DIR)/src

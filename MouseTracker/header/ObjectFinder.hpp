@@ -1,5 +1,5 @@
-#ifndef INCLUDE_OBJECT_FINDER_H
-#define INCLUDE_OBJECT_FINDER_H
+#ifndef OBJECT_FINDER_HPP_
+#define OBJECT_FINDER_HPP_
 
 #include <string>
 #include <opencv2/opencv.hpp>
@@ -34,5 +34,5 @@ private:
 
 };
 
-#endif
+#endif /* OBJECT_HPP_ */
 

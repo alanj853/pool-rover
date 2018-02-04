@@ -1,5 +1,5 @@
-#ifndef INCLUDE_OBJECT_H
-#define INCLUDE_OBJECT_H
+#ifndef OBJECT_HPP_
+#define OBJECT_HPP_
 
 #include <string>
 #include <opencv2/opencv.hpp>
@@ -34,4 +34,4 @@ private:
 	Scalar colour;
 };
 
-#endif
+#endif /* OBJECT_HPP_ */

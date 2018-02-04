@@ -1,5 +1,5 @@
-#ifndef INCLUDE_UTILS_H
-#define INCLUDE_UTILS_H
+#ifndef UTILS_HPP_
+#define UTILS_HPP_
 
 #include <limits>    // for std::numeric_limits
 #include <stdexcept> // for std::overflow_error
@@ -12,4 +12,4 @@ using namespace std;
 int size_to_int(size_t u);
 string intToString(int x);
 
-#endif
+#endif /* UTILS_HPP_ */

@@ -10,7 +10,7 @@ Class to track an object in an image
 */
 #include <ObjectFinder.hpp>
 #include <Object.hpp>
-#include <utils.h>
+#include <utils.hpp>
 #include <opencv2/highgui.hpp>
 
 using namespace cv;
