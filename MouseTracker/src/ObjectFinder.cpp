@@ -8,9 +8,9 @@
 /*
 Class to track an object in an image
 */
-
 #include <ObjectFinder.hpp>
 #include <Object.hpp>
+#include <utils.h>
 #include <opencv2/highgui.hpp>
 
 using namespace cv;
@@ -24,7 +24,7 @@ ObjectFinder::~ObjectFinder() {
 
 void ObjectFinder::trackObject(Object objToTrack, Mat threshold,
 		Mat &cameraFeed, int mode) {
-	int x, y;
+	// int x, y;
 
 	vector<Object> objects;
 
@@ -98,7 +98,8 @@ bool ObjectFinder::getObjectFound() {
 }
 
 void ObjectFinder::drawObject(vector<Object> objects, Mat &frame) {
-	for (int i = 0; i < objects.size(); i++) {
+	int objects_size = size_to_int(objects.size());
+	for (int i = 0; i < objects_size; i++) {
 
 		Object obj = objects.at(i);
 		int x = obj.getXPos();
@@ -170,6 +171,18 @@ void ObjectFinder::printBestPath(int x, int y){
 void ObjectFinder::updateMAX_OBJECT_AREA() {
 	MIN_OBJECT_AREA = MIN_OBJECT_LENGTH * MIN_OBJECT_WIDTH;
 }
+
+// // convert usigned int to signed
+// int ObjectFinder::size_to_int(size_t u)
+// {
+// 	if (u > static_cast<size_t>(std::numeric_limits<int>::max()))
+//     {
+//         throw std::overflow_error(
+//             "size_t value cannot be stored in a variable of type int.");
+//     }
+
+//     return static_cast<int>(u);
+// }
 
 
 

@@ -1,4 +1,5 @@
-#pragma once;
+#ifndef INCLUDE_OBJECT_H
+#define INCLUDE_OBJECT_H
 
 #include <string>
 #include <opencv2/opencv.hpp>
@@ -32,3 +33,5 @@ private:
 	Scalar HSVmin, HSVmax;
 	Scalar colour;
 };
+
+#endif

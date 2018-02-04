@@ -1,4 +1,6 @@
-#pragma once;
+#ifndef INCLUDE_OBJECT_FINDER_H
+#define INCLUDE_OBJECT_FINDER_H
+
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <Object.hpp>
@@ -17,6 +19,7 @@ public:
 	bool getObjectFound();
 	void updateMAX_OBJECT_AREA();
 	void printBestPath(int x, int y);
+	// int size_to_int(size_t u);
 	int XPos = 0;
 	int YPos = 0;
 	double CURRENT_OBJECT_AREA = 0;
@@ -30,4 +33,6 @@ private:
 	bool objectFound = false;
 
 };
+
+#endif
 

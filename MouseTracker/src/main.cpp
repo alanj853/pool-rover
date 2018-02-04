@@ -23,7 +23,9 @@
 
 #include <error.h>
 #include <car.hpp>
+#include <utils.h>
 #include <ObjectFinder.hpp>
+#include <udp_client.hpp>
  
 using namespace cv;
 using namespace std;
@@ -34,6 +36,7 @@ using namespace std;
 
 using namespace std;
 using namespace cv;
+using namespace udp_client_server;
 
 /*
  * Colours
@@ -46,7 +49,6 @@ using namespace cv;
 // Headers
 void pause();
 void CallBackFunc(int event, int x, int y, int flags, void* userdata);
-string intToString(int x);
 void draw_circle(int x, int y, string message);
 void draw_circle(int x, int y, string message, Scalar colour);
 void draw_line(int x1, int y1, int x2, int y2, Scalar colour);
@@ -70,6 +72,7 @@ int MIN = 0;
 int MAX = 255;
 //VideoCapture camera;
 ObjectFinder finder;
+// udp_client client;
 
 //initial min and max HSV filter values.
 //these will be changed using trackbars
@@ -120,6 +123,10 @@ Car car;
 double const slope_tolerance = 0.005;
 double const distance_from_target_tolerance = 50;
 
+const int UDP_PORT=6000;
+const unsigned int UDP_MSG_SIZE=20;
+udp_client client("127.0.0.1", UDP_PORT);
+
 // function to try to open a camera. If the camera name 
 // specified in the argument cannot be opened, the function
 // tries to open the first 5 default cameras connected to the 
@@ -142,6 +149,7 @@ bool determine_camera(char *camera_name) {
 //		return false;
 //	}
 
+	//return camera.open("http://192.168.1.18:8080/video?x.mjpeg");
 	return camera.open(1);
 }
 
@@ -255,6 +263,8 @@ void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed){
 // method to run  entire image processing program
 int run_all(char *cameraName) {
 
+	// udp_client client("127.0.0.1", 6000);
+
 	// List of tracker types in OpenCV 3.2
     // NOTE : GOTURN implementation is buggy and does not work.
     string trackerTypes[6] = {"BOOSTING", "MIL", "KCF", "TLD","MEDIANFLOW", "GOTURN"};
@@ -309,7 +319,7 @@ int run_all(char *cameraName) {
 	if (!determine_camera(cameraName)) // if camera cannot be found exit program
 		return -CAMERA_NOT_FOUND;
 
-	bool ok = camera.read(im_rgb);
+	camera.read(im_rgb);
      
     // Define initial boundibg box
     Rect2d bbox_car(287, 23, 86, 320);
@@ -492,12 +502,6 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
 	mouse_coordinates_y = y;
 }
 
-string intToString(int x) {
-	std::stringstream ss;
-	ss << x;
-	return ss.str();
-}
-
 void draw_circle(int x, int y, string message) {
 	draw_circle(x, y, message, RED);
 }
@@ -610,6 +614,9 @@ void adjust_car() {
 }
 
 void send_udp_message(string message) {
-	cout << message << endl;
+	char *cstr = new char[message.length() + 1];
+	strcpy(cstr, message.c_str());
+	client.send(cstr, message.length());
+	cout << "Sent: " << message << endl;
 }
 
