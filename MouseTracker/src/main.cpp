@@ -10,16 +10,27 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
+#include <opencv2/tracking.hpp>
+#include <opencv2/core/ocl.hpp>
 #include <cmath>
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <chrono>
+#include <ctime>
 
 #include <error.h>
 #include <car.hpp>
 #include <ObjectFinder.hpp>
+ 
+using namespace cv;
+using namespace std;
+ 
+// Convert to string
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+( std::ostringstream() << std::dec << x ) ).str()
 
 using namespace std;
 using namespace cv;
@@ -49,6 +60,7 @@ void draw_car();
 void adjust_car();
 void send_udp_message(string message);
 void createTrackbars();
+int track();
 
 int comp = 1;
 int useSavedObject = 0;
@@ -130,7 +142,7 @@ bool determine_camera(char *camera_name) {
 //		return false;
 //	}
 
-	return camera.open(0);
+	return camera.open(1);
 }
 
 Mat complementImage(Mat im, int rows, int cols) {
@@ -243,45 +255,89 @@ void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed){
 // method to run  entire image processing program
 int run_all(char *cameraName) {
 
-	createTrackbars(); //create slider bars for HSV filtering
+	// List of tracker types in OpenCV 3.2
+    // NOTE : GOTURN implementation is buggy and does not work.
+    string trackerTypes[6] = {"BOOSTING", "MIL", "KCF", "TLD","MEDIANFLOW", "GOTURN"};
+    // vector <string> trackerTypes(types, std::end(types));
+ 
+    // Create a tracker
+    string trackerType = trackerTypes[2];
+ 
+    Ptr<Tracker> tracker1;
+	Ptr<Tracker> tracker2;
+	Ptr<Tracker> tracker3;
+
 
 	string mouse_coordinates_x_s = "";
 	string mouse_coordinates_y_s = "";
-	bool trackObjects = true;
-	bool useMorphOps = false;
-	Mat im_gray;   // no need to load the Mat with anything when declaring it.
-	Mat img_bw;
-	Mat img_bw_comp;
-	Mat HSV;
-	Mat threshold;
-	int x=0, y=0;
+
+	#if (CV_MINOR_VERSION < 3)
+    {
+        tracker1 = Tracker::create(trackerType);
+		tracker2 = Tracker::create(trackerType);
+		tracker3 = Tracker::create(trackerType);
+    }
+    #else
+    {
+        if (trackerType == "BOOSTING")
+            tracker1 = TrackerBoosting::create();
+			tracker2 = TrackerBoosting::create();
+			tracker3 = TrackerBoosting::create();
+        if (trackerType == "MIL")
+            tracker1 = TrackerMIL::create();
+			tracker2 = TrackerBoosting::create();
+			tracker3 = TrackerBoosting::create();
+        if (trackerType == "KCF")
+            tracker1 = TrackerKCF::create();
+			tracker2 = TrackerBoosting::create();
+			tracker3 = TrackerBoosting::create();
+        if (trackerType == "TLD")
+            tracker1 = TrackerTLD::create();
+			tracker2 = TrackerBoosting::create();
+			tracker3 = TrackerBoosting::create();
+        if (trackerType == "MEDIANFLOW")
+            tracker1 = TrackerMedianFlow::create();
+			tracker2 = TrackerBoosting::create();
+			tracker3 = TrackerBoosting::create();
+        if (trackerType == "GOTURN")
+            tracker1 = TrackerGOTURN::create();
+			tracker2 = TrackerBoosting::create();
+			tracker3 = TrackerBoosting::create();
+    }
+    #endif
 
 	if (!determine_camera(cameraName)) // if camera cannot be found exit program
 		return -CAMERA_NOT_FOUND;
 
+	bool ok = camera.read(im_rgb);
+     
+    // Define initial boundibg box
+    Rect2d bbox_car(287, 23, 86, 320);
+	Rect2d bbox_front(287, 23, 86, 320);
+	Rect2d bbox_back(287, 23, 86, 320);
+
+	double start = time(0);
+	double end = start + 5; // allow 10 sec to warm up
+
+	cout << "Waiting..." << endl;
+	while (time(0) < end)
+	{
+		camera.read(im_rgb);
+	}
+    cout << "Select Entire Car" << endl;
+	bbox_car = selectROI(im_rgb, false);
+	cout << "Select Front of Car" << endl;
+	bbox_front = selectROI(im_rgb, false);
+	cout << "Select Back of Car" << endl;
+	bbox_back = selectROI(im_rgb, false);
+
+	tracker1->init(im_rgb, bbox_car);
+	tracker2->init(im_rgb, bbox_front);
+	tracker3->init(im_rgb, bbox_back);
+
 	while (1) {
 
 		camera.read(im_rgb); // read image frame
-
-		cvtColor(im_rgb, im_gray, CV_RGB2GRAY); // convert image to grayscale
-		cvtColor(im_rgb, HSV, COLOR_BGR2HSV);
-		inRange(HSV, Scalar(H_MIN, S_MIN, V_MIN), Scalar(H_MAX, S_MAX, V_MAX),
-				threshold);
-
-		if(useMorphOps)
-			morphOps(threshold);
-				//pass in thresholded frame to our object tracking function
-				//this function will return the x and y coordinates of the
-				//filtered object
-		if(trackObjects)
-			trackFilteredObject(x,y,threshold,im_rgb);
-
-				//show frames
-				imshow(windowName2,threshold);
-				imshow(windowName3,im_rgb);
-				imshow(windowName1,HSV);
-
-
 
 		namedWindow("Original", WINDOW_NORMAL);
 		setMouseCallback("Original", CallBackFunc, NULL);
@@ -297,12 +353,72 @@ int run_all(char *cameraName) {
 			draw_line(car.get_centre().x, car.get_centre().y, dest_coordinates_x,
 					dest_coordinates_y, YELLOW);
 
+		// Start timer
+        double timer = (double)getTickCount();
+         
+        // Update the tracking result
+        bool ok1 = tracker1->update(im_rgb, bbox_car);
+		bool ok2 = tracker2->update(im_rgb, bbox_front);
+		bool ok3 = tracker3->update(im_rgb, bbox_back);
+
+		car_coordinates_b_x = ((bbox_back.br() + bbox_back.tl())*0.5).x; //bbox_back.center.x;
+		car_coordinates_b_y = ((bbox_back.br() + bbox_back.tl())*0.5).y;
+
+		car_coordinates_f_x = ((bbox_front.br() + bbox_front.tl())*0.5).x;
+		car_coordinates_f_y = ((bbox_front.br() + bbox_front.tl())*0.5).y;
+
+
+		if(car_coordinates_b_y < car_coordinates_f_y){
+			cout << "Facing South" << endl;
+		}
+		else if(car_coordinates_b_y > car_coordinates_f_y){
+			cout << "Facing North" << endl;
+		}
+		else {
+			cout << "Neither North or South." << endl;
+		}
+
+
+		if(car_coordinates_b_x < car_coordinates_f_x){
+			cout << "	East" << endl;
+		}
+		else if(car_coordinates_b_x > car_coordinates_f_x){
+			cout << "	West" << endl;
+		}
+		else {
+			cout << "Neither West or East :(" << endl;
+		}
+
+         
+        // Calculate Frames per second (FPS)
+        float fps = getTickFrequency() / ((double)getTickCount() - timer);
+         
+        if (ok1 && ok2 && ok3)
+        {
+            // Tracking success : Draw the tracked object
+            rectangle(im_rgb, bbox_car, Scalar( 255, 0, 0 ), 2, 1 );
+			rectangle(im_rgb, bbox_front, Scalar( 255, 0, 0 ), 2, 1 );
+			rectangle(im_rgb, bbox_back, Scalar( 255, 0, 0 ), 2, 1 );
+        }
+        else
+        {
+            // Tracking failure detected.
+            putText(im_rgb, "Tracking failure detected", Point(100,80), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0,0,255),2);
+        }
+         
+        // Display tracker type on frame
+        putText(im_rgb, trackerType + " Tracker", Point(100,20), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(50,170,50),2);
+         
+        // Display FPS on frame
+        putText(im_rgb, "FPS : " + SSTR(int(fps)), Point(100,50), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(50,170,50), 2);
+
+
 		imshow("Original", im_rgb);
 
 		//delay 30ms so that screen can refresh.
 		//image will not appear without this waitKey() command
-		// press 'd' to exit the program
-		if ((char) waitKey(30) == 'd')
+		// press 'q' to exit the program
+		if ((char) waitKey(30) == 'q')
 			break;
 
 		// Clear Car and Destination Coordinates
@@ -317,9 +433,6 @@ int run_all(char *cameraName) {
 			car_coordinates_b_y = 0;
 		}
 	}
-	destroyWindow(windowName1);
-	destroyWindow(windowName2);
-	destroyWindow(windowName3);
 
 	camera.release();
 	return NORMAL_EXIT;
@@ -335,6 +448,8 @@ int main(int argc, char *argv[]) {
 		result = run_all(argv[1]);
 	}
 
+	// int result = track();
+
 	cout << "Result of program: " << result << endl;
 	//	pause();
 	return result;
@@ -346,6 +461,7 @@ void pause() {
 }
 
 void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
+	Mat frame;
 	if (event == EVENT_LBUTTONDOWN) {
 		dest_coordinates_x = x;
 		dest_coordinates_y = y;
@@ -496,30 +612,4 @@ void adjust_car() {
 void send_udp_message(string message) {
 	cout << message << endl;
 }
-void createTrackbars(){
-	//create window for trackbars
 
-
-    namedWindow(trackbarWindowName,0);
-	//create memory to store trackbar name on window
-	char TrackbarName[50];
-	sprintf( TrackbarName, "H_MIN", H_MIN);
-	sprintf( TrackbarName, "H_MAX", H_MAX);
-	sprintf( TrackbarName, "S_MIN", S_MIN);
-	sprintf( TrackbarName, "S_MAX", S_MAX);
-	sprintf( TrackbarName, "V_MIN", V_MIN);
-	sprintf( TrackbarName, "V_MAX", V_MAX);
-	//create trackbars and insert them into window
-	//3 parameters are: the address of the variable that is changing when the trackbar is moved(eg.H_LOW),
-	//the max value the trackbar can move (eg. H_HIGH),
-	//and the function that is called whenever the trackbar is moved(eg. on_trackbar)
-	//                                  ---->    ---->     ---->
-    createTrackbar( "H_MIN", trackbarWindowName, &H_MIN, H_MAX, on_trackbar );
-    createTrackbar( "H_MAX", trackbarWindowName, &H_MAX, H_MAX, on_trackbar );
-    createTrackbar( "S_MIN", trackbarWindowName, &S_MIN, S_MAX, on_trackbar );
-    createTrackbar( "S_MAX", trackbarWindowName, &S_MAX, S_MAX, on_trackbar );
-    createTrackbar( "V_MIN", trackbarWindowName, &V_MIN, V_MAX, on_trackbar );
-    createTrackbar( "V_MAX", trackbarWindowName, &V_MAX, V_MAX, on_trackbar );
-
-
-}
