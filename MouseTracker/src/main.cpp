@@ -445,6 +445,7 @@ int run_all(char *cameraName) {
 	}
 
 	camera.release();
+	send_udp_message("TURN OFF");
 	return NORMAL_EXIT;
 }
 
